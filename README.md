@@ -23,7 +23,8 @@ To create this example we need the following:
 
 First we will create a simple form with two PlaceHolders; One containing the Login area, and the other hidden placeholder containing a 'Token' entry form:
 
-Page source
+#### HTML Page source
+```
 <asp:PlaceHolder ID="plcLoginArea" runat="server">
 User name: <asp:TextBox ID="txtUserName" runat="server" />
 <br />
@@ -37,14 +38,15 @@ Enter Token: <asp:TextBox ID="txtToken" runat="server" />
 <br />
 <asp:Button ID="btnTokenEntry" runat="server" Text="Submit" OnClick="btnTokenEntry_Click" />
 </asp:PlaceHolder>
-
+```
 
 Nothing special, no pretty markup or any attempt to validate input, I want to keep this simple.
 
-Helper Classes
+## Helper Classes
 We need two simple Helper Classes, one to generate a token, and the second one to send the Text Message:
 
-Generate Token (VB)
+#### Generate Token (VB)
+```
 Private Function GenerateToken(ByVal length As Integer) As String
 Dim sb As New StringBuilder()
 ' Wait to force new Seed
@@ -58,9 +60,10 @@ sb.Append(ch)
 Next i
 Return sb.ToString()
 End Function
+```
 
-
-Generate Token (C#)
+#### Generate Token (C#)
+```
 private string GenerateToken(int length)
 {
 System.Text.StringBuilder sb = new System.Text.StringBuilder();
@@ -76,9 +79,10 @@ sb.Append(ch);
 }
 return sb.ToString();
 }
+```
 
-
-Send SMS (VB)
+#### Send SMS (VB)
+```
 Private Function SendSMS(ByVal token As String, ByVal number As String) As Boolean
 Dim URL As String = "https://www.voipbuster.com/myaccount/sendsms.php?username={0}&password={1}&from={2}&to={3}&text={4}"
 URL = String.Format(URL, "userName", "password", "0123456789", number, token)
@@ -90,9 +94,10 @@ Catch ex As Exception
 Return False
 End Try
 End Function
+```
 
-
-Send SMS (C#)
+#### Send SMS (C#)
+```
 private bool SendSMS(string token, string number)
 {
 string URL = "https://www.voipbuster.com/myaccount/sendsms.php?username={0}&password={1}&from={2}&to={3}&text={4}";
@@ -108,9 +113,9 @@ catch (Exception ex)
 return false;
 }
 }
+```
 
-
-Login Process
+## Login Process
 Now we are ready for the actual login process. The first step is when the User has entered the Username and Password fields and has clicked on btnSubmitLogin. The following will occur:
 
 - Credentials are checked (user is not logged in).
@@ -118,7 +123,8 @@ Now we are ready for the actual login process. The first step is when the User h
 - UserName and Token are saved to Session variables.
 - plcLoginArea.visible is set to false, plcTokenEntry.visible is set to true.
 
-btnSubmitLogin_Click (VB)
+#### btnSubmitLogin_Click (VB)
+```
 Protected Sub btnSubmitLogin_Click(ByVal sender As Object, ByVal e As System.EventArgs)
 ' Validate the User (this does not log the user in)
 If Membership.ValidateUser(txtUserName.Text, txtPassword.Text) Then
@@ -142,9 +148,10 @@ Else
 ' TODO Verification failed, let the User know
 End If
 End Sub
+```
 
-
-btnSubmitLogin_Click (C#)
+#### btnSubmitLogin_Click (C#)
+```
 protected void btnSubmitLogin_Click(object sender, EventArgs e)
 {
 // Validate the User (this does not log the user in)
@@ -175,14 +182,15 @@ else
 // TODO Verification failed, let the User know
 }
 }
-
+```
 
 The user should have received and SMS with the Token, and they can enter it into the text box, when they click on btnSubmitToken the following happens:
 
 - The entered Token is verified with the token saved in the Session Variable.
 - If the Tokens match the user is logged in by setting a Auth Cookie (using the UserName stored in the session).
 
-btnTokenEntry_Click (VB)
+#### btnTokenEntry_Click (VB)
+```
 Protected Sub btnTokenEntry_Click(ByVal sender As Object, ByVal e As System.EventArgs)
 Dim token As String = HttpContext.Current.Session("Token").ToString()
 If Not txtToken.Text = token Then
@@ -193,9 +201,10 @@ Dim userName As String = HttpContext.Current.Session("Username").ToString()
 FormsAuthentication.SetAuthCookie(userName, False)
 End If
 End Sub
+```
 
-
-btnTokenEntry_Click (C#)
+#### btnTokenEntry_Click (C#)
+```
 protected void btnTokenEntry_Click(object sender, EventArgs e)
 {
 string token = HttpContext.Current.Session["Token"].ToString();
@@ -210,20 +219,20 @@ string userName = HttpContext.Current.Session["Username"].ToString();
 System.Web.Security.FormsAuthentication.SetAuthCookie(userName, false);
 }
 }
-
+```
 
 This is all very simple and needs a bit of work to make it user friendly, but the basics are there for a working two-factor authentication process which is very simple to implement in any website.
 
-Shortcomings:
+### Shortcomings:
 If the user closes their browser during the login process, the session has been lost and the whole process will need to be repeated as the sent code is no longer valid. (One option is to save the details to a database instead of to the session.)
 
 
-Comments from Ocean10000
+### Comments from Ocean10000
 The seeding mechanism for generating the token can produce duplicate codes.*
 In server farms you will need a server farm friendly form of Session-State [msdn.microsoft.com].
 You can also choose to send the token to an email address instead of a Text Message (SMS).
 * to force a new seed every time I have set the system to wait 20 ticks as the New Random() uses the current time as the seed. (In a loop with shorter times I was getting dupes).
 
-Possible improvements:
+### Possible improvements:
 Use Validators to check input (you should do this)
 Use Ajax to show progress spinner while sending an SMS (this can sometimes take a few seconds)
